@@ -8,35 +8,23 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  // TODO: SQLite'tan çekilecek özetlerin listesi
-  // final List<OzetModel> _gecmisOzetler = [];
-
   @override
   void initState() {
     super.initState();
-    // TODO: Bu fonksiyonun içinde SQLite veritabanından verileri çek
-    // _loadHistory();
   }
 
-  void _loadHistory() {
-    // setState(() {
-    //   _gecmisOzetler = ... // veritabanı sorgusu
-    // });
-  }
+  void _loadHistory() {}
 
   @override
   Widget build(BuildContext context) {
-    bool gecmisBos = true; // Şimdilik hep boş göster
+    bool gecmisBos = true;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Geçmiş Özetler'), centerTitle: true),
-      body: gecmisBos
-          ? _buildBosGecmisEkrani() // Eğer geçmiş boşsa
-          : _buildGecmisListesi(), // Eğer geçmiş doluysa
+      body: gecmisBos ? _buildBosGecmisEkrani() : _buildGecmisListesi(),
     );
   }
 
-  // Geçmiş listesi boşken gösterilecek widget
   Widget _buildBosGecmisEkrani() {
     return Center(
       child: Column(
@@ -53,13 +41,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  // TODO: SQLite verileri ile doldurulacak liste
   Widget _buildGecmisListesi() {
     return ListView.builder(
-      // itemCount: _gecmisOzetler.length,
-      itemCount: 0, // şimdilik
+      itemCount: 0,
       itemBuilder: (context, index) {
-        // final ozet = _gecmisOzetler[index];
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: ListTile(
@@ -74,9 +59,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               overflow: TextOverflow.ellipsis,
             ),
             trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              // TODO: Detay sayfasına git veya özeti göster
-            },
+            onTap: () {},
           ),
         );
       },
