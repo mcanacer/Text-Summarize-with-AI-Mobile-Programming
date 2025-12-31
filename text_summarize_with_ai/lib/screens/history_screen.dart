@@ -9,7 +9,9 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  // Sayfayı yenilemek için kullanılan fonksiyon
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
   void _yenile() {
     setState(() {});
   }
@@ -21,90 +23,156 @@ class _HistoryScreenState extends State<HistoryScreen> {
         title: const Text('Özet Geçmişi'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _yenile, // Manuel yenileme butonu
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _yenile),
         ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: DbHelper.gecmisiGetir(), // SQLite'tan verileri çek
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.history, size: 80, color: Colors.grey[300]),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "Henüz bir özet kaydınız yok.",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(20),
               ),
-            );
-          }
-
-          final ozetler = snapshot.data!;
-
-          return ListView.builder(
-            itemCount: ozetler.length,
-            padding: const EdgeInsets.all(12),
-            itemBuilder: (context, index) {
-              final item = ozetler[index];
-              return Card(
-                elevation: 2,
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: "Özetlerde veya metinlerde ara...",
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = "";
+                            });
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  title: Text(
-                    item['orijinal'].toString().split(
-                      '\n',
-                    )[0], // İlk satırı başlık yap
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      item['ozet'],
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _searchQuery.isEmpty
+                  ? DbHelper.gecmisiGetir()
+                  : DbHelper.gecmisiAra(_searchQuery),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _searchQuery.isEmpty
+                              ? Icons.history
+                              : Icons.search_off,
+                          size: 80,
+                          color: Colors.grey[300],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchQuery.isEmpty
+                              ? "Henüz bir özet kaydınız yok."
+                              : "Aranan kriterde sonuç bulunamadı.",
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
                     ),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.redAccent,
-                    ),
-                    onPressed: () async {
-                      await DbHelper.ozetSil(item['id']);
-                      _yenile(); // Silince listeyi güncelle
-                    },
-                  ),
-                  onTap: () {
-                    // Tıklayınca tam özeti gösteren bir pencere aç
-                    _ozetDetayGoster(context, item['orijinal'], item['ozet']);
+                  );
+                }
+
+                final ozetler = snapshot.data!;
+
+                return ListView.builder(
+                  itemCount: ozetler.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemBuilder: (context, index) {
+                    final item = ozetler[index];
+                    return Dismissible(
+                      key: Key(item['id'].toString()),
+                      background: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      direction: DismissDirection.endToStart,
+                      onDismissed: (direction) async {
+                        await DbHelper.ozetSil(item['id']);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Kayıt silindi"),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        elevation: 1,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16),
+                          title: Text(
+                            item['orijinal'].toString().split('\n')[0],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              item['ozet'],
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () {
+                            _ozetDetayGoster(
+                              context,
+                              item['orijinal'],
+                              item['ozet'],
+                            );
+                          },
+                        ),
+                      ),
+                    );
                   },
-                ),
-              );
-            },
-          );
-        },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // Detay gösterme penceresi (Popup)
   void _ozetDetayGoster(BuildContext context, String orijinal, String ozet) {
     showModalBottomSheet(
       context: context,

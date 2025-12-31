@@ -1,20 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:text_summarize_with_ai/screens/history_screen.dart';
 import 'package:text_summarize_with_ai/screens/home_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
-  runApp(const SummarizeWithAIApp());
+  runApp(const OzAIApp());
 }
 
-class SummarizeWithAIApp extends StatelessWidget {
-  const SummarizeWithAIApp({super.key});
+class OzAIApp extends StatelessWidget {
+  const OzAIApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Summarize with AI',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.deepPurple),
+      title: 'Öz.AI',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: Brightness.light,
+        ),
+        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: Brightness.dark,
+        ),
+        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+      ),
+      themeMode: ThemeMode.system,
       home: const MainNavigator(),
     );
   }

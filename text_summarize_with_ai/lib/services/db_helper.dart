@@ -23,7 +23,6 @@ class DbHelper {
     );
   }
 
-  // Veri Ekleme
   static Future<void> ozetKaydet(String orijinal, String ozet) async {
     final db = await database;
     await db.insert('ozetler', {
@@ -33,7 +32,6 @@ class DbHelper {
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  // Verileri Getirme
   static Future<List<Map<String, dynamic>>> gecmisiGetir() async {
     final db = await database;
     return await db.query('ozetler', orderBy: "id DESC");
@@ -42,5 +40,15 @@ class DbHelper {
   static Future<void> ozetSil(int id) async {
     final db = await database;
     await db.delete('ozetler', where: 'id = ?', whereArgs: [id]);
+  }
+
+  static Future<List<Map<String, dynamic>>> gecmisiAra(String kelime) async {
+    final db = await database;
+    return await db.query(
+      'ozetler',
+      where: 'orijinal LIKE ? OR ozet LIKE ?',
+      whereArgs: ['%$kelime%', '%$kelime%'],
+      orderBy: "id DESC",
+    );
   }
 }
