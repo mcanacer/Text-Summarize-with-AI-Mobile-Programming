@@ -14,9 +14,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _metinController = TextEditingController();
-
   String _ozetSonucu = "Özet sonucu burada görünecek...";
   bool _yukleniyor = false;
+  String _seciliModelKey = "BART (Dengeli)";
+  int _verilenPuan = 0;
 
   void _ozetleMetni() async {
     if (_metinController.text.isEmpty) {
@@ -28,27 +29,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       _yukleniyor = true;
+      _verilenPuan = 0;
     });
 
     try {
-      String sonuc = await ApiService.metniOzetle(_metinController.text);
-
-      if (!sonuc.startsWith("Hata") && !sonuc.startsWith("Bağlantı")) {
-        await DbHelper.ozetKaydet(_metinController.text, sonuc);
-      }
+      String sonuc = await ApiService.metniOzetle(
+        _metinController.text,
+        ApiService.modeller[_seciliModelKey]!,
+      );
 
       setState(() {
         _ozetSonucu = sonuc;
       });
     } catch (e) {
       setState(() {
-        _ozetSonucu = "Bir hata oluştu: $e";
+        _ozetSonucu = "Hata: $e";
       });
     } finally {
       setState(() {
         _yukleniyor = false;
       });
     }
+  }
+
+  void _puanlaVeKaydet(int puan) async {
+    setState(() {
+      _verilenPuan = puan;
+    });
+    await DbHelper.ozetKaydet(
+      _metinController.text,
+      _ozetSonucu,
+      _seciliModelKey,
+      puan,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Model geri bildirimi kaydedildi!")),
+    );
   }
 
   @override
@@ -69,10 +85,33 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const Text(
-              "Bugün neyi özetlemek istersin?",
+              "Model seç ve özetlemeye başla.",
               style: TextStyle(color: Colors.grey),
             ),
-            const SizedBox(height: 25),
+            const SizedBox(height: 20),
+            const Text(
+              "Kullanılacak Yapay Zeka Modeli:",
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: ApiService.modeller.keys.map((String key) {
+                return ChoiceChip(
+                  label: Text(key),
+                  selected: _seciliModelKey == key,
+                  selectedColor: Colors.deepPurple.shade100,
+                  onSelected: (bool selected) {
+                    if (selected) {
+                      setState(() {
+                        _seciliModelKey = key;
+                      });
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -116,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   elevation: 2,
                 ),
                 child: Text(
-                  _yukleniyor ? "Yapay Zeka Çalışıyor..." : "Özetle ✨",
+                  _yukleniyor ? "Analiz Ediliyor..." : "Özetle ✨",
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -129,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (_ozetSonucu.isNotEmpty)
               Container(
                 width: double.infinity,
-                constraints: const BoxConstraints(maxHeight: 400),
+                constraints: const BoxConstraints(maxHeight: 450),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -152,22 +191,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "AI ANALİZİ",
-                          style: TextStyle(
+                        Text(
+                          "AI ANALİZİ ($_seciliModelKey)",
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.deepPurple,
-                            letterSpacing: 1.2,
+                            fontSize: 12,
                           ),
                         ),
                         Row(
                           children: [
                             IconButton(
-                              icon: const Icon(
-                                Icons.copy_rounded,
-                                size: 20,
-                                color: Colors.deepPurple,
-                              ),
+                              icon: const Icon(Icons.copy_rounded, size: 20),
                               onPressed: () {
                                 Clipboard.setData(
                                   ClipboardData(text: _ozetSonucu),
@@ -178,11 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             ),
                             IconButton(
-                              icon: const Icon(
-                                Icons.share_rounded,
-                                size: 20,
-                                color: Colors.deepPurple,
-                              ),
+                              icon: const Icon(Icons.share_rounded, size: 20),
                               onPressed: () => Share.share(_ozetSonucu),
                             ),
                           ],
@@ -201,6 +232,32 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
+                    ),
+                    const Divider(),
+                    const Center(
+                      child: Text(
+                        "Modelin performansını puanlayın:",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return IconButton(
+                          icon: Icon(
+                            index < _verilenPuan
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            color: Colors.amber,
+                            size: 32,
+                          ),
+                          onPressed: () => _puanlaVeKaydet(index + 1),
+                        );
+                      }),
                     ),
                   ],
                 ),
