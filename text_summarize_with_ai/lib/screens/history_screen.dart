@@ -21,8 +21,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(appBar: _buildAppBar(), body: _buildBody());
   }
 
-  /* -------------------- APP BAR -------------------- */
-
   AppBar _buildAppBar() {
     return AppBar(
       title: const Text('Özet Geçmişi'),
@@ -33,8 +31,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  /* -------------------- BODY -------------------- */
-
   Widget _buildBody() {
     return Column(
       children: [
@@ -43,8 +39,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ],
     );
   }
-
-  /* -------------------- SEARCH BAR -------------------- */
 
   Widget _buildSearchBar() {
     return Padding(
@@ -85,8 +79,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
   }
 
-  /* -------------------- HISTORY LIST -------------------- */
-
   Widget _buildHistoryList() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _searchQuery.isEmpty
@@ -115,8 +107,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       },
     );
   }
-
-  /* -------------------- HISTORY ITEM -------------------- */
 
   Widget _buildHistoryItem(Map<String, dynamic> item) {
     return Dismissible(
@@ -173,8 +163,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ],
     );
   }
-
-  /* -------------------- SMALL UI PARTS -------------------- */
 
   Widget _buildModelBadge(String? modelName) {
     return Container(
@@ -239,8 +227,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
-
-  /* -------------------- DETAIL BOTTOM SHEET -------------------- */
 
   void _ozetDetayGoster(
     BuildContext context,
