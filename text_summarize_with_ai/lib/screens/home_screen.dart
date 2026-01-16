@@ -13,14 +13,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _metinController = TextEditingController();
-  String _ozetSonucu = "Özet sonucu burada görünecek...";
-  bool _yukleniyor = false;
-  String _seciliModelKey = "BART (Dengeli)";
-  int _verilenPuan = 0;
+  final TextEditingController _textController = TextEditingController();
+  String _summaryResult = "Özet sonucu burada görünecek...";
+  bool _loading = false;
+  String _selectedModelKey = "BART (Dengeli)";
+  int _givenScore = 0;
 
-  void _ozetleMetni() async {
-    if (_metinController.text.isEmpty) {
+  void _summaryText() async {
+    if (_textController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Lütfen bir metin girin!")));
@@ -28,40 +28,40 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() {
-      _yukleniyor = true;
-      _verilenPuan = 0;
+      _loading = true;
+      _givenScore = 0;
     });
 
     try {
-      String sonuc = await ApiService.metniOzetle(
-        _metinController.text,
-        ApiService.modeller[_seciliModelKey]!,
+      String result = await ApiService.summarizeText(
+        _textController.text,
+        ApiService.models[_selectedModelKey]!,
       );
 
       setState(() {
-        _ozetSonucu = sonuc;
+        _summaryResult = result;
       });
     } catch (e) {
       setState(() {
-        _ozetSonucu = "Hata: $e";
+        _summaryResult = "Hata: $e";
       });
     } finally {
       setState(() {
-        _yukleniyor = false;
+        _loading = false;
       });
     }
   }
 
-  void _puanlaVeKaydet(int puan) async {
+  void _rateAndSave(int score) async {
     setState(() {
-      _verilenPuan = puan;
+      _givenScore = score;
     });
 
-    await DbHelper.ozetKaydet(
-      _metinController.text,
-      _ozetSonucu,
-      _seciliModelKey,
-      puan,
+    await DbHelper.saveSummary(
+      _textController.text,
+      _summaryResult,
+      _selectedModelKey,
+      score,
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -131,14 +131,14 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          children: ApiService.modeller.keys.map((key) {
+          children: ApiService.models.keys.map((key) {
             return ChoiceChip(
               label: Text(key),
-              selected: _seciliModelKey == key,
+              selected: _selectedModelKey == key,
               selectedColor: Colors.deepPurple.shade100,
               onSelected: (_) {
                 setState(() {
-                  _seciliModelKey = key;
+                  _selectedModelKey = key;
                 });
               },
             );
@@ -158,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: TextField(
-        controller: _metinController,
+        controller: _textController,
         maxLines: 6,
         decoration: InputDecoration(
           hintText: "Uzun metni buraya bırak...",
@@ -166,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
           border: InputBorder.none,
           suffixIcon: IconButton(
             icon: const Icon(Icons.clear_rounded),
-            onPressed: () => _metinController.clear(),
+            onPressed: () => _textController.clear(),
           ),
         ),
       ),
@@ -174,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLoadingAnimation() {
-    if (!_yukleniyor) return const SizedBox.shrink();
+    if (!_loading) return const SizedBox.shrink();
 
     return Center(child: Lottie.asset('assets/ai_animation.json', height: 120));
   }
@@ -184,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: _yukleniyor ? null : _ozetleMetni,
+        onPressed: _loading ? null : _summaryText,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.deepPurple,
           shape: RoundedRectangleBorder(
@@ -192,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: Text(
-          _yukleniyor ? "Analiz Ediliyor..." : "Özetle",
+          _loading ? "Analiz Ediliyor..." : "Özetle",
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -204,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildResultCard() {
-    if (_ozetSonucu.isEmpty) return const SizedBox.shrink();
+    if (_summaryResult.isEmpty) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
@@ -235,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          "AI ANALİZİ ($_seciliModelKey)",
+          "AI ANALİZİ ($_selectedModelKey)",
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.deepPurple,
@@ -247,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               icon: const Icon(Icons.copy_rounded),
               onPressed: () {
-                Clipboard.setData(ClipboardData(text: _ozetSonucu));
+                Clipboard.setData(ClipboardData(text: _summaryResult));
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(const SnackBar(content: Text("Kopyalandı!")));
@@ -255,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.share_rounded),
-              onPressed: () => Share.share(_ozetSonucu),
+              onPressed: () => Share.share(_summaryResult),
             ),
           ],
         ),
@@ -267,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Expanded(
       child: SingleChildScrollView(
         child: Text(
-          _ozetSonucu,
+          _summaryResult,
           style: const TextStyle(fontSize: 16, height: 1.6),
         ),
       ),
@@ -286,12 +286,12 @@ class _HomeScreenState extends State<HomeScreen> {
           children: List.generate(5, (index) {
             return IconButton(
               icon: Icon(
-                index < _verilenPuan
+                index < _givenScore
                     ? Icons.star_rounded
                     : Icons.star_outline_rounded,
                 color: Colors.amber,
               ),
-              onPressed: () => _puanlaVeKaydet(index + 1),
+              onPressed: () => _rateAndSave(index + 1),
             );
           }),
         ),

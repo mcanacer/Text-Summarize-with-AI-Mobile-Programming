@@ -29,7 +29,7 @@ class DbHelper {
     );
   }
 
-  static Future<void> ozetKaydet(
+  static Future<void> saveSummary(
     String orijinal,
     String ozet,
     String model,
@@ -45,17 +45,17 @@ class DbHelper {
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  static Future<List<Map<String, dynamic>>> gecmisiGetir() async {
+  static Future<List<Map<String, dynamic>>> getHistory() async {
     final db = await database;
     return await db.query('ozetler', orderBy: "id DESC");
   }
 
-  static Future<void> ozetSil(int id) async {
+  static Future<void> deleteSummary(int id) async {
     final db = await database;
     await db.delete('ozetler', where: 'id = ?', whereArgs: [id]);
   }
 
-  static Future<List<Map<String, dynamic>>> gecmisiAra(String kelime) async {
+  static Future<List<Map<String, dynamic>>> searchHistory(String kelime) async {
     final db = await database;
     return await db.query(
       'ozetler',

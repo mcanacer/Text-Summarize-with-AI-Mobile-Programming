@@ -4,13 +4,13 @@ import 'package:http/http.dart' as http;
 class ApiService {
   static const String _apiKey = String.fromEnvironment('HF_TOKEN');
 
-  static const Map<String, String> modeller = {
+  static const Map<String, String> models = {
     "BART (Dengeli)": "facebook/bart-large-cnn",
     "DistilBART (Hızlı)": "sshleifer/distilbart-cnn-12-6",
     "Pegasus (Akademik)": "google/pegasus-xsum",
   };
 
-  static Future<String> metniOzetle(String metin, String modelPath) async {
+  static Future<String> summarizeText(String metin, String modelPath) async {
     final String apiUrl =
         "https://router.huggingface.co/hf-inference/models/$modelPath";
 

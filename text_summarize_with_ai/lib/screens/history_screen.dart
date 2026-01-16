@@ -82,8 +82,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildHistoryList() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _searchQuery.isEmpty
-          ? DbHelper.gecmisiGetir()
-          : DbHelper.gecmisiAra(_searchQuery),
+          ? DbHelper.getHistory()
+          : DbHelper.searchHistory(_searchQuery),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -114,7 +114,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       background: _buildDeleteBackground(),
       direction: DismissDirection.endToStart,
       onDismissed: (_) async {
-        await DbHelper.ozetSil(item['id']);
+        await DbHelper.deleteSummary(item['id']);
       },
       child: Card(
         elevation: 1,
